@@ -122,7 +122,7 @@ class Football(commands.Cog):
         return None
 
     @commands.command(name="teams")
-    async def list_teams(self, ctx, league: str = None):
+    async def list_teams(self, ctx, *, league: str = None):
         """List all teams or filter by league"""
         embed = discord.Embed(title="Available Teams", color=0x00FF00)
 
@@ -162,7 +162,7 @@ class Football(commands.Cog):
         for league in self.team_data.values():
             embed.add_field(
                 name=f"🏆 {league['name']}",
-                value=f"`!teams` to view teams",
+                value=f"`!teams {league['name'].lower()}` to view teams",
                 inline=False
             )
         await ctx.send(embed=embed)
