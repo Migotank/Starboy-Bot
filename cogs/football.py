@@ -13,6 +13,7 @@ class Football(commands.Cog):
         self.bot = bot
         self.leagues = {
             "premier_league": {
+                "name": "Premier League",
                 "id": 39,
                 "teams": {
                     "arsenal": {"id": 42, "color": 0xEF0107, "logo": "https://crests.football-data.org/57.png"},  # Red
@@ -37,6 +38,7 @@ class Football(commands.Cog):
                 }
             },
             "la_liga": {
+                "name": "LA Liga",
                 "id": 140,
                 "teams": {
                     "alaves": {"id": 542, "color": 0x0055A4, "logo": "https://crests.football-data.org/263.png"},  # Blue/White
@@ -63,114 +65,116 @@ class Football(commands.Cog):
             }
         }
 
-        async def fetch_football_data(self, endpoint: str, params: dict = None):
-            """Universal API fetcher with error handling"""
-            headers = {
-                "X-Auth-Token": os.getenv("FOOTBALL_API_KEY"),
-                "Content-Type": "application/json"
-            }
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.get(
-                            f"https://api.football-data.org/v4/{endpoint}",
-                            headers=headers,
-                            params=params,
-                            timeout=10
-                    ) as response:
-                        if response.status == 200:
-                            return await response.json()
-                        await self._handle_api_error(response.status)
-                except Exception as e:
-                    print(f"API Error: {e}")
-                    return None
+    async def fetch_football_data(self, endpoint: str, params: dict = None):
+        """Universal API fetcher with error handling"""
+        headers = {
+            "X-Auth-Token": os.getenv("FOOTBALL_API_KEY"),
+            "Content-Type": "application/json"
+        }
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(
+                        f"https://api.football-data.org/v4/{endpoint}",
+                        headers=headers,
+                        params=params,
+                        timeout=10
+                ) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    await self._handle_api_error(response.status)
+            except Exception as e:
+                print(f"API Error: {e}")
+                return None
 
-        @commands.command(name="team")
-        async def team_stats(self, ctx, *, team_name: str):
-            """Get team statistics (!team arsenal)"""
-            team_data = await self._find_team(team_name)
-            if not team_data:
-                return await ctx.send("⚠️ Team not found. Try `!leagues` for options.")
+    @commands.command(name="team")
+    async def team_stats(self, ctx, *, team_name: str):
+        """Get team statistics (!team arsenal)"""
+        team_data = await self._find_team(team_name)
+        if not team_data:
+            return await ctx.send("⚠️ Team not found. Try `!leagues` for options.")
 
-            data = await self.fetch_football_data(f"teams/{team_data['id']}")
+        data = await self.fetch_football_data(f"teams/{team_data['id']}")
+        if not data:
+            return await ctx.send("⚠️ Failed to fetch team data")
 
-            embed = discord.Embed(
-                title=f"🏟️ {data['name']} ({team_data['league']})",
-                color=team_data["color"]
+        embed = discord.Embed(
+            title=f"🏟️ {data['name']} ({team_data['league']})",
+            color=team_data["color"]
+        )
+        embed.set_thumbnail(url=team_data["logo"])
+        embed.add_field(name="Venue", value=data.get("venue", "Unknown"), inline=False)
+        embed.add_field(name="Founded", value=data.get("founded", "Unknown"), inline=True)
+        await ctx.send(embed=embed)
+
+    @commands.command(name="player")
+    async def player_stats(self, ctx, *, name: str):
+        """Get player statistics (!player vinicius)"""
+        data = await self.fetch_football_data("players", {"name": name})
+        if not data or not data.get("response"):
+            return await ctx.send(f"⚠️ Player '{name}' not found.")
+
+        player = data["response"][0]["player"]
+        stats = data["response"][0]["statistics"][0]
+        team_name = stats["team"]["name"].lower().replace(" ", "")
+
+        embed = discord.Embed(
+            title=f"⭐ {player['name']} ({player['position']})",
+            color=self._get_team_color(team_name)
+        )
+        embed.set_thumbnail(url=player["photo"])
+        embed.add_field(name="Team", value=stats["team"]["name"], inline=True)
+        embed.add_field(name="Goals", value=stats["goals"]["total"], inline=True)
+        await ctx.send(embed=embed)
+
+    @commands.command(name="leagues")
+    async def list_leagues(self, ctx):
+        """Show available leagues"""
+        embed = discord.Embed(title="Available Leagues", color=0x7289DA)
+        for league_id, league in self.leagues.items():
+            embed.add_field(
+                name=f"🏆 {league['name']}",
+                value=f"`!teams {league_id}` to list teams",
+                inline=False
             )
-            embed.set_thumbnail(url=team_data["logo"])
-            embed.add_field(name="Venue", value=data["venue"], inline=False)
-            embed.add_field(name="Founded", value=data["founded"], inline=True)
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
-        @commands.command(name="player")
-        async def player_stats(self, ctx, *, name: str):
-            """Get player statistics (!player vinicius)"""
-            data = await self.fetch_football_data("players", {"name": name})
+    @commands.command(name="teams")
+    async def list_teams(self, ctx, league: str = "premier_league"):
+        """List teams in a league (!teams la_liga)"""
+        league_data = self.leagues.get(league.lower())
+        if not league_data:
+            return await ctx.send("⚠️ League not found. Try `!leagues`.")
 
-            if not data.get("response"):
-                return await ctx.send(f"⚠️ Player '{name}' not found.")
+        embed = discord.Embed(
+            title=f"{league_data['name']} Teams",
+            color=0x00FF00
+        )
+        team_list = "\n".join(
+            f"• {team.replace('_', ' ').title()}"
+            for team in league_data["teams"].keys()
+        )
+        embed.description = team_list
+        await ctx.send(embed=embed)
 
-            player = data["response"][0]["player"]
-            stats = data["response"][0]["statistics"][0]
-            team_name = stats["team"]["name"].lower().replace(" ", "")
+    async def _find_team(self, team_name: str):
+        """Search for team across all leagues"""
+        team_key = team_name.lower().replace(" ", "")
+        for league_name, league in self.leagues.items():
+            if team_key in league["teams"]:
+                return {
+                    **league["teams"][team_key],
+                    "league": league["name"]
+                }
+        return None
 
-            embed = discord.Embed(
-                title=f"⭐ {player['name']} ({player['position']})",
-                color=self._get_team_color(team_name)
-            )
-            embed.set_thumbnail(url=player["photo"])
-            embed.add_field(name="Team", value=stats["team"]["name"], inline=True)
-            embed.add_field(name="Goals", value=stats["goals"]["total"], inline=True)
-            await ctx.send(embed=embed)
+    def _get_team_color(self, team_name: str):
+        """Get color for any team by name"""
+        for league in self.leagues.values():
+            for name, data in league["teams"].items():
+                if name == team_name.lower().replace(" ", ""):
+                    return data["color"]
+        return 0x000000  # Default black
 
-        @commands.command(name="leagues")
-        async def list_leagues(self, ctx):
-            """Show available leagues"""
-            embed = discord.Embed(title="Available Leagues", color=0x7289DA)
-            for league_id, league in self.leagues.items():
-                embed.add_field(
-                    name=f"🏆 {league['name']}",
-                    value=f"`!teams {league_id}` to list teams",
-                    inline=False
-                )
-            await ctx.send(embed=embed)
-
-        @commands.command(name="teams")
-        async def list_teams(self, ctx, league: str = "premier_league"):
-            """List teams in a league (!teams la_liga)"""
-            league_data = self.leagues.get(league.lower())
-            if not league_data:
-                return await ctx.send("⚠️ League not found. Try `!leagues`.")
-
-            embed = discord.Embed(
-                title=f"{league_data['name']} Teams",
-                color=0x00FF00
-            )
-            team_list = "\n".join(
-                f"• {team.replace('_', ' ').title()}"
-                for team in league_data["teams"].keys()
-            )
-            embed.description = team_list
-            await ctx.send(embed=embed)
-
-        async def _find_team(self, team_name: str):
-            """Search for team across all leagues"""
-            team_key = team_name.lower().replace(" ", "")
-            for league in self.leagues.values():
-                if team_key in league["teams"]:
-                    return {
-                        **league["teams"][team_key],
-                        "league": league["name"]
-                    }
-            return None
-
-        def _get_team_color(self, team_name: str):
-            """Get color for any team by name"""
-            for league in self.leagues.values():
-                for name, data in league["teams"].items():
-                    if name == team_name.lower().replace(" ", ""):
-                        return data["color"]
-            return 0x000000  # Default black
 
 async def setup(bot): #
-        await bot.add_cog(Football(bot))
+    await bot.add_cog(Football(bot))
