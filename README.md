@@ -1,3 +1,6 @@
+#StarBoy Bot 🔴⚪️
+
+
 ## Overview
 A multipurpose Arsenal FC-themed Discord bot! ⚽✨ Features:
 
