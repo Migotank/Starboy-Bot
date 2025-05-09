@@ -66,11 +66,15 @@ async def ping(ctx):
     await ctx.send(f"🏓 Pong! {latency}ms")
 
 
-# Run the bot
 if __name__ == "__main__":
     try:
-        bot.run(os.getenv("DISCORD_BOT_TOKEN")) or os.getenv("TOKEN")
+        # Get token - PROPER way to handle fallback
+        token = os.getenv("DISCORD_BOT_TOKEN") or os.getenv("TOKEN")
+        if not token:
+            raise ValueError("No token found in environment variables!")
+
+        bot.run(token)
     except discord.LoginFailure:
-        print("⚠️ Invalid bot token! Check your .env file.")
+        print("⚠️ Invalid bot token! Check your environment variables.")
     except KeyboardInterrupt:
         print("🛑 Bot shutting down...")
