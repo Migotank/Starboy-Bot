@@ -76,7 +76,7 @@ class Football(commands.Cog):
             return {"error": error_msg}
 
         headers = {
-            "X-Auth-Token": api_token,
+            "X-Auth-Token": os.getenv("FOOTBALL_API_TOKEN").strip(),
             "Content-Type": "application/json"
         }
 
