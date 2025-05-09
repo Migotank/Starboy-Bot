@@ -86,14 +86,7 @@ class Football(commands.Cog):
         except Exception as e:
             return {"error": f"Connection failed: {str(e)}"}
 
-    @commands.command()
-    async def test_arsenal(ctx):
-        """Test Arsenal data fetch"""
-        data = await self.fetch_football_data("teams/57")
-        if "error" in data:
-            await ctx.send(f"❌ {data['error']}")
-        else:
-            await ctx.send(f"✅ Arsenal info: {data['name']} ({data['founded']})")
+
 
     async def _handle_api_error(self, status_code: int):
         """Handles API response errors with detailed messages"""
