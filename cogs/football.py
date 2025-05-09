@@ -66,17 +66,10 @@ class Football(commands.Cog):
             }
         }
 
-    async def fetch_football_data(self, endpoint: str, params: dict = None):
-        """Universal API fetcher with comprehensive error handling"""
-        # First verify we have an API token
-        api_token = os.getenv("FOOTBALL_API_TOKEN")
-        if not api_token:
-            error_msg = "API token not configured (FOOTBALL_API_TOKEN missing)"
-            print(f"❌ {error_msg}")
-            return {"error": error_msg}
-
+    async def fetch_football_data(self, endpoint: str):
+        """Universal API fetcher with your working token"""
         headers = {
-            "X-Auth-Token": os.getenv("FOOTBALL_API_TOKEN").strip(),
+            "X-Auth-Token": "ff7f0c71d3604382b49ad72b1b9979bf",  # Hardcoded temporarily
             "Content-Type": "application/json"
         }
 
@@ -85,29 +78,22 @@ class Football(commands.Cog):
                 async with session.get(
                         f"https://api.football-data.org/v4/{endpoint}",
                         headers=headers,
-                        params=params,
                         timeout=10
                 ) as response:
                     if response.status == 200:
                         return await response.json()
-
-                    # Handle API errors
-                    error_info = await self._handle_api_error(response.status)
-                    print(f"API Error: {error_info['message']}")
-                    return {"error": error_info["message"], "status": response.status}
-
-        except asyncio.TimeoutError:
-            error_msg = "Request timed out (10s)"
-            print(f"⏱️ {error_msg}")
-            return {"error": error_msg}
-        except aiohttp.ClientError as e:
-            error_msg = f"Network error: {str(e)}"
-            print(f"🌐 {error_msg}")
-            return {"error": error_msg}
+                    return {"error": f"API Error: HTTP {response.status}"}
         except Exception as e:
-            error_msg = f"Unexpected error: {str(e)}"
-            print(f"⚠️ {error_msg}")
-            return {"error": error_msg}
+            return {"error": f"Connection failed: {str(e)}"}
+
+    @commands.command()
+    async def test_arsenal(ctx):
+        """Test Arsenal data fetch"""
+        data = await self.fetch_football_data("teams/57")
+        if "error" in data:
+            await ctx.send(f"❌ {data['error']}")
+        else:
+            await ctx.send(f"✅ Arsenal info: {data['name']} ({data['founded']})")
 
     async def _handle_api_error(self, status_code: int):
         """Handles API response errors with detailed messages"""
