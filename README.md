@@ -36,20 +36,20 @@ Displays a list of available leagues.
 ### `!poll "question" "option1" "option2"` ...:
 - Creates a poll with up to 10 options.
 
-### `!remind [time] [reminder]`:
+### `!remind [time] [reminder]`:  
 - Set a reminder with a specified time (e.g., 1h30m Do homework).
 - Time format can include days (d), hours (h), and minutes (m).
 - The bot will remind you in the specified channel.
 
-### `!kick` [member] [reason]: 
+### `!kick` [member] [reason]:  (ADMIN/OWNER command)
 - Kicks a member from the server with an optional reason.
 
-### `!ban` [member] [reason]: 
+### `!ban` [member] [reason]:   (ADMIN/OWNER command)
 - Bans a member from the server for a specified reason.
 
-### `!unban` [user_id]: 
+### `!unban` [user_id]:   (ADMIN/OWNER command)
 - Unbans a user from the server using their user ID.
 
-### `!mute` [member] [reason]: 
+### `!mute` [member] [reason]:  (ADMIN/OWNER command)
 - Mutes a member (requires the 'Muted' role to be set up in the server).
 
