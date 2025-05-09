@@ -28,12 +28,6 @@ async def load_cogs():
             except Exception as e:
                 print(f"❌ Failed to load {filename}: {e}")
 
-    # Manually ensure utility loads even if not in /cogs folder
-    try:
-        await bot.load_extension("cogs.utility")  # 🛠️ Add this line
-        print("✅ Loaded utility cog")
-    except Exception as e:
-        print(f"❌ Failed to load utility cog: {e}")
 
 
 # Bot events
