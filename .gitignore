@@ -1,0 +1,36 @@
+# StarBot/.gitignore
+
+### Secrets ###
+.env
+config.json
+*.key
+*.pem
+
+### Python ###
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+.env/
+.venv/
+
+### IDE (PyCharm) ###
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+### System ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+logs/
+
+### Database ###
+*.db
+*.sqlite
