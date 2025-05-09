@@ -4,7 +4,6 @@ from discord.ext import commands
 from datetime import datetime
 import asyncio
 
-
 class Moderation(commands.Cog):
     """Server moderation commands"""
 
@@ -39,8 +38,15 @@ class Moderation(commands.Cog):
 
         await self.log_channel.send(embed=embed)
 
+    def is_admin_or_owner():
+        """Custom check for admin or owner"""
+        async def predicate(ctx):
+            # Check if the user has 'Administrator' permission or is the server owner
+            return ctx.author.guild_permissions.administrator or ctx.author.id == ctx.guild.owner_id
+        return commands.check(predicate)
+
     @commands.command()
-    @commands.has_permissions(kick_members=True)
+    @is_admin_or_owner()
     async def kick(self, ctx, member: discord.Member, *, reason: str = "No reason provided"):
         """Kick a member from the server"""
         try:
@@ -51,7 +57,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Failed to kick: {e}")
 
     @commands.command()
-    @commands.has_permissions(ban_members=True)
+    @is_admin_or_owner()
     async def ban(self, ctx, member: discord.Member, *, reason: str = "No reason provided"):
         """Ban a member from the server"""
         try:
@@ -62,7 +68,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Failed to ban: {e}")
 
     @commands.command()
-    @commands.has_permissions(ban_members=True)
+    @is_admin_or_owner()
     async def unban(self, ctx, *, user_id: int):
         """Unban a user by ID"""
         try:
@@ -74,7 +80,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Failed to unban: {e}")
 
     @commands.command()
-    @commands.has_permissions(manage_roles=True)
+    @is_admin_or_owner()
     async def mute(self, ctx, member: discord.Member, *, reason: str = "No reason provided"):
         """Mute a member (requires 'Muted' role setup)"""
         if not self.mute_role:
@@ -88,7 +94,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Failed to mute: {e}")
 
     @commands.command()
-    @commands.has_permissions(manage_roles=True)
+    @is_admin_or_owner()
     async def unmute(self, ctx, member: discord.Member):
         """Unmute a member"""
         if not self.mute_role:
@@ -102,7 +108,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Failed to unmute: {e}")
 
     @commands.command()
-    @commands.has_permissions(manage_messages=True)
+    @is_admin_or_owner()
     async def purge(self, ctx, amount: int = 5):
         """Bulk delete messages (default: 5)"""
         if not 1 <= amount <= 100:
@@ -116,7 +122,7 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Failed to purge: {e}")
 
     @commands.command()
-    @commands.has_permissions(manage_roles=True)
+    @is_admin_or_owner()
     async def warn(self, ctx, member: discord.Member, *, reason: str):
         """Warn a member with a reason"""
         try:

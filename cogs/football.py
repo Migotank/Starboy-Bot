@@ -1,3 +1,4 @@
+# cogs/football.py
 import os
 import aiohttp
 import discord
