@@ -15,9 +15,12 @@ class Moderation(commands.Cog):
 
     async def cog_load(self):
         """Initialize mute role and log channel"""
-        # Set your server's mute role ID here
-        self.mute_role = discord.utils.get(self.bot.guilds[0].roles, name="Muted")
-        self.log_channel = discord.utils.get(self.bot.guilds[0].channels, name="mod-logs")
+        if not self.bot.guilds:
+            return  # Avoid index error if not connected
+
+        guild = self.bot.guilds[0]
+        self.mute_role = discord.utils.get(guild.roles, name="Muted")
+        self.log_channel = discord.utils.get(guild.channels, name="mod-logs")
 
     async def log_action(self, action: str, moderator: discord.Member, target: discord.Member, reason: str = None):
         """Log moderation actions to a channel"""
