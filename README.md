@@ -1,3 +1,4 @@
+## Overview
 A multipurpose Arsenal FC-themed Discord bot! ⚽✨ Features:
 
 ⚙️ Utility: Server info, user stats, polls, reminders.
