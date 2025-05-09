@@ -145,5 +145,5 @@ class Utility(commands.Cog):
             del self.reminders[user_id]
 
 
-async def setup(bot):
+async def setup(bot): #
     await bot.add_cog(Utility(bot))

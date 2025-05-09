@@ -124,5 +124,5 @@ class Moderation(commands.Cog):
             await ctx.send(f"❌ Couldn't DM warning: {e}")
 
 
-async def setup(bot):
+async def setup(bot): #
     await bot.add_cog(Moderation(bot))

@@ -172,5 +172,5 @@ class Football(commands.Cog):
                         return data["color"]
             return 0x000000  # Default black
 
-    async def setup(bot):
+    async def setup(bot): #
         await bot.add_cog(Football(bot))
