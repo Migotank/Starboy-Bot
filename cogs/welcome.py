@@ -2,6 +2,8 @@
 import discord
 from discord.ext import commands
 from datetime import datetime
+import os
+import json
 
 
 class Welcome(commands.Cog):
@@ -27,9 +29,9 @@ class Welcome(commands.Cog):
 
         embed = discord.Embed(
             title=f"🌟 Welcome {member.display_name}!",
-            description=f"1. Read {member.guild.rules_channel.mention}\n"
-                        f"2. Pick roles in <#{self.role_channel_id}>\n"
-                        f"3. Enjoy your stay!",
+            description=f"➤ Read {member.guild.rules_channel.mention} pinned message\n"
+                        f"➤ Pick roles in <#{self.role_channel_id}>\n"
+                        f"➤ Enjoy your stay!",
             color=0xEF0107,  # Arsenal red
             timestamp=datetime.now()
         )
@@ -48,6 +50,57 @@ class Welcome(commands.Cog):
             )
         except discord.Forbidden:
             pass  # User has DMs disabled
+
+    @commands.command(name="setup_reaction_message")
+    @commands.has_permissions(administrator=True)
+    async def setup_reaction_message(self, ctx):
+        """Send the reaction role message and store its ID"""
+        message = await ctx.send("React with 🔴 to get the Arsenal Fan role!")
+        await message.add_reaction("🔴")
+
+        # Save message ID for tracking
+        with open("reaction_message.json", "w") as f:
+            json.dump({"message_id": message.id}, f)
+
+        await ctx.send("✅ Reaction message set up and ID saved.")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if payload.member.bot:
+            return
+
+        if not os.path.exists("reaction_message.json"):
+            return
+        with open("reaction_message.json", "r") as f:
+            data = json.load(f)
+
+        if payload.message_id != data.get("message_id"):
+            return
+        if str(payload.emoji) != "🔴":
+            return
+
+        guild = self.bot.get_guild(payload.guild_id)
+        role = discord.utils.get(guild.roles, name="Arsenal Fan")
+        if role:
+            await payload.member.add_roles(role, reason="Reacted for role")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        if not os.path.exists("reaction_message.json"):
+            return
+        with open("reaction_message.json", "r") as f:
+            data = json.load(f)
+
+        if payload.message_id != data.get("message_id"):
+            return
+        if str(payload.emoji) != "🔴":
+            return
+
+        guild = self.bot.get_guild(payload.guild_id)
+        member = guild.get_member(payload.user_id)
+        role = discord.utils.get(guild.roles, name="Arsenal Fan")
+        if role and member:
+            await member.remove_roles(role, reason="Unreacted from role")
 
 
 async def setup(bot):
