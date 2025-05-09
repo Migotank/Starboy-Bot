@@ -162,7 +162,7 @@ class Football(commands.Cog):
         for league in self.team_data.values():
             embed.add_field(
                 name=f"🏆 {league['name']}",
-                value=f"`!teams {league['name'].lower()}` to view teams",
+                value=f"`!teams` to view teams",
                 inline=False
             )
         await ctx.send(embed=embed)
