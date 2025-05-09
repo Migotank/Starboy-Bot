@@ -68,7 +68,7 @@ class Football(commands.Cog):
     async def fetch_football_data(self, endpoint: str, params: dict = None):
         """Universal API fetcher with error handling"""
         headers = {
-            "X-Auth-Token": os.getenv("FOOTBALL_API_KEY"),
+            "X-Auth-Token": os.getenv("FOOTBALL_API_TOKEN"),
             "Content-Type": "application/json"
         }
         async with aiohttp.ClientSession() as session:
