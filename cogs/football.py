@@ -66,13 +66,21 @@ class Football(commands.Cog):
         }
 
     async def fetch_football_data(self, endpoint: str, params: dict = None):
-        """Universal API fetcher with error handling"""
+        """Universal API fetcher with comprehensive error handling"""
+        # First verify we have an API token
+        api_token = os.getenv("FOOTBALL_API_TOKEN")
+        if not api_token:
+            error_msg = "API token not configured (FOOTBALL_API_TOKEN missing)"
+            print(f"❌ {error_msg}")
+            return {"error": error_msg}
+
         headers = {
-            "X-Auth-Token": os.getenv("FOOTBALL_API_TOKEN"),
+            "X-Auth-Token": api_token,
             "Content-Type": "application/json"
         }
-        async with aiohttp.ClientSession() as session:
-            try:
+
+        try:
+            async with aiohttp.ClientSession() as session:
                 async with session.get(
                         f"https://api.football-data.org/v4/{endpoint}",
                         headers=headers,
@@ -81,10 +89,47 @@ class Football(commands.Cog):
                 ) as response:
                     if response.status == 200:
                         return await response.json()
-                    await self._handle_api_error(response.status)
-            except Exception as e:
-                print(f"API Error: {e}")
-                return None
+
+                    # Handle API errors
+                    error_info = await self._handle_api_error(response.status)
+                    print(f"API Error: {error_info['message']}")
+                    return {"error": error_info["message"], "status": response.status}
+
+        except asyncio.TimeoutError:
+            error_msg = "Request timed out (10s)"
+            print(f"⏱️ {error_msg}")
+            return {"error": error_msg}
+        except aiohttp.ClientError as e:
+            error_msg = f"Network error: {str(e)}"
+            print(f"🌐 {error_msg}")
+            return {"error": error_msg}
+        except Exception as e:
+            error_msg = f"Unexpected error: {str(e)}"
+            print(f"⚠️ {error_msg}")
+            return {"error": error_msg}
+
+    async def _handle_api_error(self, status_code: int):
+        """Handles API response errors with detailed messages"""
+        error_messages = {
+            400: "Bad request - check your request parameters",
+            401: "Unauthorized - invalid API credentials",
+            403: "Forbidden - check your API token permissions",
+            404: "Data not found - the requested resource doesn't exist",
+            429: "Rate limited - you've exceeded API limits (10 calls/min)",
+            500: "Server error - football-data.org is having issues",
+            503: "Service unavailable - try again later"
+        }
+
+        message = error_messages.get(
+            status_code,
+            f"HTTP error {status_code} - check API documentation"
+        )
+
+        return {
+            "message": message,
+            "status": status_code,
+            "retryable": status_code in [429, 500, 503]
+        }
 
     @commands.command(name="team")
     async def team_stats(self, ctx, *, team_name: str):
