@@ -139,16 +139,17 @@ class Football(commands.Cog):
             return await ctx.send("⚠️ Team not found. Try `!leagues` for options.")
 
         data = await self.fetch_football_data(f"teams/{team_data['id']}")
-        if not data:
-            return await ctx.send("⚠️ Failed to fetch team data")
+        if not data or 'name' not in data:
+            return await ctx.send("⚠️ Failed to fetch valid team data.")
 
         embed = discord.Embed(
-            title=f"🏟️ {data['name']} ({team_data['league']})",
-            color=team_data["color"]
+            title=f"🏟️ {data.get('name', team_data.get('display_name', 'Unknown'))} ({team_data['league']})",
+            color=team_data.get("color", 0x808080)
         )
-        embed.set_thumbnail(url=team_data["logo"])
+        embed.set_thumbnail(url=team_data.get("logo", discord.Embed.Empty))
         embed.add_field(name="Venue", value=data.get("venue", "Unknown"), inline=False)
         embed.add_field(name="Founded", value=data.get("founded", "Unknown"), inline=True)
+
         await ctx.send(embed=embed)
 
     @commands.command(name="player")
@@ -206,9 +207,11 @@ class Football(commands.Cog):
         team_key = team_name.lower().replace(" ", "")
         for league_name, league in self.leagues.items():
             if team_key in league["teams"]:
+                team = league["teams"][team_key]
                 return {
-                    **league["teams"][team_key],
-                    "league": league["name"]
+                    **team,
+                    "league": league["name"],
+                    "display_name": team_key.title()
                 }
         return None
 
