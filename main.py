@@ -69,7 +69,7 @@ async def ping(ctx):
 # Run the bot
 if __name__ == "__main__":
     try:
-        bot.run(os.getenv("DISCORD_BOT_TOKEN"))
+        bot.run(os.getenv("DISCORD_BOT_TOKEN")) or os.getenv("TOKEN")
     except discord.LoginFailure:
         print("⚠️ Invalid bot token! Check your .env file.")
     except KeyboardInterrupt:
