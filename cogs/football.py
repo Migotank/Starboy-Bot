@@ -1,5 +1,4 @@
 # cogs/football.py
-import asyncio
 import os
 import aiohttp
 import discord
@@ -66,10 +65,17 @@ class Football(commands.Cog):
             }
         }
 
-    async def fetch_football_data(self, endpoint: str):
-        """Universal API fetcher with your working token"""
+    async def fetch_football_data(self, endpoint: str, params: dict = None):
+        """Universal API fetcher with comprehensive error handling"""
+        # First verify we have an API token
+        api_token = os.getenv("FOOTBALL_API_TOKEN")
+        if not api_token:
+            error_msg = "API token not configured (FOOTBALL_API_TOKEN missing)"
+            print(f"❌ {error_msg}")
+            return {"error": error_msg}
+
         headers = {
-            "X-Auth-Token": "ff7f0c71d3604382b49ad72b1b9979bf",  # Hardcoded temporarily
+            "X-Auth-Token": api_token,
             "Content-Type": "application/json"
         }
 
@@ -78,15 +84,29 @@ class Football(commands.Cog):
                 async with session.get(
                         f"https://api.football-data.org/v4/{endpoint}",
                         headers=headers,
+                        params=params,
                         timeout=10
                 ) as response:
                     if response.status == 200:
                         return await response.json()
-                    return {"error": f"API Error: HTTP {response.status}"}
+
+                    # Handle API errors
+                    error_info = await self._handle_api_error(response.status)
+                    print(f"API Error: {error_info['message']}")
+                    return {"error": error_info["message"], "status": response.status}
+
+        except asyncio.TimeoutError:
+            error_msg = "Request timed out (10s)"
+            print(f"⏱️ {error_msg}")
+            return {"error": error_msg}
+        except aiohttp.ClientError as e:
+            error_msg = f"Network error: {str(e)}"
+            print(f"🌐 {error_msg}")
+            return {"error": error_msg}
         except Exception as e:
-            return {"error": f"Connection failed: {str(e)}"}
-
-
+            error_msg = f"Unexpected error: {str(e)}"
+            print(f"⚠️ {error_msg}")
+            return {"error": error_msg}
 
     async def _handle_api_error(self, status_code: int):
         """Handles API response errors with detailed messages"""
@@ -113,25 +133,23 @@ class Football(commands.Cog):
 
     @commands.command(name="team")
     async def team_stats(self, ctx, *, team_name: str):
-        try:
-            team_data = await self._find_team(team_name)
-            if not team_data:
-                return await ctx.send("⚠️ Team not found. Try `!leagues` for options.")
+        """Get team statistics (!team arsenal)"""
+        team_data = await self._find_team(team_name)
+        if not team_data:
+            return await ctx.send("⚠️ Team not found. Try `!leagues` for options.")
 
-            data = await self.fetch_football_data(f"teams/{team_data['id']}")
-            if not data or "error" in data:
-                return await ctx.send(f"⚠️ Failed to fetch data: {data.get('error', 'Unknown error')}")
+        data = await self.fetch_football_data(f"teams/{team_data['id']}")
+        if not data:
+            return await ctx.send("⚠️ Failed to fetch team data")
 
-            embed = discord.Embed(
-                title=f"🏟️ {data.get('name', team_name.title())} ({team_data.get('league', 'Unknown')})",
-                color=team_data.get("color", 0x000000)
-            )
-            if "logo" in team_data:
-                embed.set_thumbnail(url=team_data["logo"])
-            # ... rest of your embed code
-        except Exception as e:
-            print(f"Command error: {e}")
-            await ctx.send("⚠️ An error occurred processing your request")
+        embed = discord.Embed(
+            title=f"🏟️ {data['name']} ({team_data['league']})",
+            color=team_data["color"]
+        )
+        embed.set_thumbnail(url=team_data["logo"])
+        embed.add_field(name="Venue", value=data.get("venue", "Unknown"), inline=False)
+        embed.add_field(name="Founded", value=data.get("founded", "Unknown"), inline=True)
+        await ctx.send(embed=embed)
 
     @commands.command(name="player")
     async def player_stats(self, ctx, *, name: str):
@@ -186,11 +204,11 @@ class Football(commands.Cog):
     async def _find_team(self, team_name: str):
         """Search for team across all leagues"""
         team_key = team_name.lower().replace(" ", "")
-        for league_id, league in self.leagues.items():
+        for league_name, league in self.leagues.items():
             if team_key in league["teams"]:
                 return {
                     **league["teams"][team_key],
-                    "league": league.get("name", league_id.replace("_", " ").title())
+                    "league": league["name"]
                 }
         return None
 
