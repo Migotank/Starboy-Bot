@@ -7,8 +7,16 @@ from datetime import datetime
 class Welcome(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.welcome_channel_id = 123456789  # Replace with your welcome channel ID
+        self.welcome_channel_id = 1370163477817196544 # Replace with your welcome channel ID
         self.role_channel_id = 1370174300421623980  # Your role channel ID
+
+    @commands.command(name="testwelcome")
+    @commands.has_permissions(administrator=True)  # Optional: restrict to admins
+    async def test_welcome(self, ctx, member: discord.Member = None):
+        """Manually trigger the welcome message for testing"""
+        member = member or ctx.author
+        await self.on_member_join(member)
+        await ctx.send(f"✅ Simulated welcome message for {member.mention}")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
