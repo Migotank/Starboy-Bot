@@ -103,6 +103,14 @@ class Football(commands.Cog):
         embed.add_field(name="📅 Founded", value=data['founded'], inline=True)
         embed.add_field(name="🌍 Area", value=data['area']['name'], inline=True)
 
+        # Coach info (if available)
+        if data.get('coach'):
+            embed.add_field(
+                name="👔 Coach",
+                value=f"{data['coach']['name']} ({data['coach']['nationality']})",
+                inline=False
+            )
+
         # Competitions
         comps = "\n".join(f"• {c['name']}" for c in data['runningCompetitions'])
         embed.add_field(name="🏆 Competitions", value=comps, inline=False)
