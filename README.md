@@ -1,4 +1,5 @@
 # StarBoy Bot 🔴⚪️
+<img width="619" alt="StarBoy Bot" src="https://github.com/user-attachments/assets/e600bd77-fdf2-4c67-af05-429bf09651f8" />
 
 
 ## Overview
